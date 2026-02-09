@@ -6,7 +6,10 @@
       "Bash(npm run check:*)",
       "Bash(npx vitest:*)",
       "Bash(node -e:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm run test:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(node --check:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
