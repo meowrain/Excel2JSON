@@ -105,3 +105,10 @@ npm run preview
 - 日期字段会尽量兼容 Excel 序列日期（数字日期）
 - 当 `excludeIfEmpty = true` 时，空值字段不会出现在输出 JSON 中
 - 若目标字段包含 `.`，会按路径写入嵌套对象
+
+## �����ͼ
+
+![�������ͼ 1](doc/images/image1.png)
+
+![�������ͼ 2](doc/images/image2.png)
+
