@@ -16,7 +16,24 @@
 
 	// Derived
 	const hasData = $derived(headers.length > 0 && rows.length > 0);
-	const convertedJson = $derived(hasData ? convertData(rows, mappings) : []);
+
+	// Debounced conversion to avoid lag while editing mappings
+	let convertedJson = $state<Record<string, unknown>[]>([]);
+	let debounceTimer: ReturnType<typeof setTimeout>;
+
+	$effect(() => {
+		// $state.snapshot forces deep read of all nested properties,
+		// so changes to e.g. mappings[i].target will trigger this effect
+		const snapshotMappings = $state.snapshot(mappings);
+		const currentRows = rows;
+		const dataReady = hasData;
+
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => {
+			convertedJson = dataReady ? convertData(currentRows, snapshotMappings) : [];
+		}, 150);
+	});
+
 	const jsonString = $derived(JSON.stringify(convertedJson, null, 2));
 
 	// File handling

@@ -29,9 +29,29 @@
 			config.format = undefined;
 		}
 	}
+
+	// Click outside to close
+	let panelEl: HTMLDivElement;
+
+	function onDocumentClick(e: MouseEvent) {
+		if (panelEl && !panelEl.contains(e.target as Node)) {
+			onclose();
+		}
+	}
+
+	$effect(() => {
+		// Delay listener attachment to avoid catching the opening click itself
+		const timer = setTimeout(() => {
+			document.addEventListener('click', onDocumentClick, true);
+		}, 0);
+		return () => {
+			clearTimeout(timer);
+			document.removeEventListener('click', onDocumentClick, true);
+		};
+	});
 </script>
 
-<div class="absolute top-full left-0 z-50 mt-1 w-72 rounded-lg border border-gray-200 bg-white p-4 shadow-xl">
+<div bind:this={panelEl} class="absolute top-full left-0 z-50 mt-1 w-72 rounded-lg border border-gray-200 bg-white p-4 shadow-xl">
 	<div class="mb-3 flex items-center justify-between">
 		<h4 class="text-sm font-semibold text-gray-700">列配置</h4>
 		<button onclick={onclose} aria-label="关闭配置" class="text-gray-400 hover:text-gray-600 cursor-pointer">
