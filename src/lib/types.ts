@@ -1,5 +1,14 @@
 export type DataType = 'string' | 'number' | 'boolean' | 'date';
 
+/** Mapping fallback strategy when value is not found in dictionary */
+export type MappingFallback = 'keep' | 'null' | 'custom';
+
+/** Dictionary mapping item - maps source value to target value */
+export interface ValueMapItem {
+	source: string | number;
+	target: unknown;
+}
+
 export type DateFormat =
 	| 'YYYY-MM-DD'
 	| 'YYYY/MM/DD'
@@ -23,6 +32,14 @@ export interface MappingConfig {
 	defaultValue?: string;
 	/** Whether this column is included in output */
 	enabled: boolean;
+	/** v2.1: Enable dictionary/value mapping for this column */
+	useDictionary?: boolean;
+	/** v2.1: Value mapping dictionary */
+	valueMapping?: ValueMapItem[];
+	/** v2.1: Fallback strategy when value not found in mapping */
+	mappingFallback?: MappingFallback;
+	/** v2.1: Custom fallback value (only used when mappingFallback is 'custom') */
+	mappingCustomValue?: string;
 }
 
 /** A single row of raw Excel data, keyed by original header */
@@ -31,7 +48,7 @@ export type RowData = Record<string, unknown>;
 /** Template file structure for import/export */
 export type MappingTemplate = Pick<
 	MappingConfig,
-	'source' | 'target' | 'type' | 'format' | 'excludeIfEmpty' | 'defaultValue'
+	'source' | 'target' | 'type' | 'format' | 'excludeIfEmpty' | 'defaultValue' | 'useDictionary' | 'valueMapping' | 'mappingFallback' | 'mappingCustomValue'
 >[];
 
 /** Static mapping rule in Job Bundle output */
@@ -41,6 +58,14 @@ export interface StaticRule {
 	target: string;
 	dataType: DataType;
 	format?: string;
+	/** v2.1: Enable dictionary/value mapping */
+	useDictionary?: boolean;
+	/** v2.1: Value mapping dictionary */
+	valueMapping?: ValueMapItem[];
+	/** v2.1: Fallback strategy when value not found in mapping */
+	mappingFallback?: MappingFallback;
+	/** v2.1: Custom fallback value */
+	mappingCustomValue?: string;
 }
 
 /** Dynamic API enrichment rule */

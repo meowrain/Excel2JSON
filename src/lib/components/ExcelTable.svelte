@@ -131,7 +131,7 @@
 								{/if}
 							</div>
 							{#if activeConfigIndex === i && mappings[i]}
-								<ColumnConfig bind:config={mappings[i]} onclose={() => (activeConfigIndex = null)} />
+								<ColumnConfig bind:config={mappings[i]} {rows} onclose={() => (activeConfigIndex = null)} />
 							{/if}
 						</th>
 					{/each}
