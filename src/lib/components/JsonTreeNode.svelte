@@ -13,6 +13,7 @@
 		defaultOpen?: boolean;
 	} = $props();
 
+	// svelte-ignore state_referenced_locally — intentionally using initial value only
 	let open = $state(defaultOpen);
 
 	const valueType = $derived(

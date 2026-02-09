@@ -106,9 +106,10 @@ npm run preview
 - å½“ `excludeIfEmpty = true` æ—¶ï¼Œç©ºå€¼å­—æ®µä¸ä¼šå‡ºç°åœ¨è¾“å‡º JSON ä¸­
 - è‹¥ç›®æ ‡å­—æ®µåŒ…å« `.`ï¼Œä¼šæŒ‰è·¯å¾„å†™å…¥åµŒå¥—å¯¹è±¡
 
-## ½çÃæ½ØÍ¼
 
-![Ö÷½çÃæ½ØÍ¼ 1](doc/images/image1.png)
+## Screenshots
 
-![Ö÷½çÃæ½ØÍ¼ 2](doc/images/image2.png)
+![Screenshot 1](doc/images/image1.png)
+
+![Screenshot 2](doc/images/image2.png)
 
