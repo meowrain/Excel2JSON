@@ -1,9 +1,11 @@
 <script lang="ts">
-	import type { MappingConfig, RowData, MappingTemplate } from '$lib/types.js';
+	import type { MappingConfig, RowData, MappingTemplate, ApiEnrichmentRule, SubmissionConfig } from '$lib/types.js';
 	import { parseExcelFile } from '$lib/excel.js';
-	import { convertData, createDefaultMappings, applyTemplate, exportTemplate } from '$lib/converter.js';
+	import { convertData, createDefaultMappings, applyTemplate, exportTemplate, generateJobBundle } from '$lib/converter.js';
 	import ExcelTable from '$lib/components/ExcelTable.svelte';
 	import JsonPreview from '$lib/components/JsonPreview.svelte';
+	import ApiConfigModal from '$lib/components/ApiConfigModal.svelte';
+	import SubmissionSettings from '$lib/components/SubmissionSettings.svelte';
 
 	// State
 	let headers = $state<string[]>([]);
@@ -13,6 +15,17 @@
 	let fileName = $state('');
 	let isDragOver = $state(false);
 	let copySuccess = $state(false);
+
+	// ETL state
+	let enrichmentRules = $state<ApiEnrichmentRule[]>([]);
+	let submissionConfig = $state<SubmissionConfig>({
+		target_url: '',
+		method: 'POST',
+		batch_size: 50
+	});
+	let showApiConfig = $state(false);
+	let showSubmissionSettings = $state(false);
+	let editingRuleIndex = $state<number | null>(null);
 
 	// Split panel
 	let splitPercent = $state(50);
@@ -50,28 +63,41 @@
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
 	$effect(() => {
-		// $state.snapshot forces deep read of all nested properties,
-		// so changes to e.g. mappings[i].target will trigger this effect
 		const snapshotMappings = $state.snapshot(mappings);
+		const snapshotRules = $state.snapshot(enrichmentRules);
 		const currentRows = rows;
 		const dataReady = hasData;
 
 		clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {
-			convertedJson = dataReady ? convertData(currentRows, snapshotMappings) : [];
+			if (dataReady) {
+				const base = convertData(currentRows, snapshotMappings);
+				// Add API placeholders for preview
+				if (snapshotRules.length > 0) {
+					convertedJson = base.map((row) => {
+						const enriched = { ...row };
+						for (const rule of snapshotRules) {
+							enriched[rule.target_key] = '[Pending API Fetch]';
+						}
+						return enriched;
+					});
+				} else {
+					convertedJson = base;
+				}
+			} else {
+				convertedJson = [];
+			}
 		}, 150);
 	});
 
-	// Manual JSON editing — overrides converted output until next mapping/data change
+	// Manual JSON editing
 	let manualJson = $state<string | null>(null);
-
 	const jsonString = $derived(manualJson ?? JSON.stringify(convertedJson, null, 2));
 
 	function onJsonEdited(edited: string) {
 		manualJson = edited;
 	}
 
-	// Clear manual override when conversion changes
 	$effect(() => {
 		convertedJson;
 		manualJson = null;
@@ -179,6 +205,43 @@
 			errorMessage = '复制失败，请手动复制';
 		}
 	}
+
+	// Job Bundle export
+	function handleExportJobBundle() {
+		const bundle = generateJobBundle(rows, mappings, enrichmentRules, submissionConfig);
+		const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = fileName ? fileName.replace(/\.[^.]+$/, '_job_bundle.json') : 'job_bundle.json';
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	// API enrichment rules management
+	function openAddApiConfig() {
+		editingRuleIndex = null;
+		showApiConfig = true;
+	}
+
+	function openEditApiConfig(index: number) {
+		editingRuleIndex = index;
+		showApiConfig = true;
+	}
+
+	function deleteApiRule(index: number) {
+		enrichmentRules = enrichmentRules.filter((_, i) => i !== index);
+	}
+
+	function handleSaveApiRule(rule: ApiEnrichmentRule) {
+		if (editingRuleIndex !== null) {
+			enrichmentRules = enrichmentRules.map((r, i) => (i === editingRuleIndex ? rule : r));
+		} else {
+			enrichmentRules = [...enrichmentRules, rule];
+		}
+		showApiConfig = false;
+		editingRuleIndex = null;
+	}
 </script>
 
 <div
@@ -231,7 +294,36 @@
 			导出配置
 		</button>
 
+		<div class="mx-2 h-6 w-px bg-gray-200"></div>
+
+		<!-- Submission Settings -->
+		<button
+			onclick={() => (showSubmissionSettings = true)}
+			disabled={!hasData}
+			class="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+		>
+			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+			</svg>
+			提交设置
+		</button>
+
 		<div class="flex-1"></div>
+
+		<!-- Export Job Bundle -->
+		<button
+			onclick={handleExportJobBundle}
+			disabled={!hasData}
+			class="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+		>
+			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+			</svg>
+			导出任务包
+		</button>
+
+		<div class="mx-1 h-6 w-px bg-gray-200"></div>
 
 		<!-- JSON operations -->
 		<button
@@ -302,7 +394,15 @@
 		>
 			<!-- Left: Excel Table -->
 			<div class="overflow-hidden" style="width: {jsonCollapsed ? '100%' : `${splitPercent}%`}">
-				<ExcelTable {headers} {rows} bind:mappings />
+				<ExcelTable
+					{headers}
+					{rows}
+					bind:mappings
+					{enrichmentRules}
+					onaddapi={openAddApiConfig}
+					oneditapi={openEditApiConfig}
+					ondeleteapi={deleteApiRule}
+				/>
 			</div>
 
 			{#if !jsonCollapsed}
@@ -369,3 +469,20 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Modals -->
+{#if showApiConfig}
+	<ApiConfigModal
+		rule={editingRuleIndex !== null ? enrichmentRules[editingRuleIndex] : undefined}
+		{headers}
+		onsave={handleSaveApiRule}
+		onclose={() => { showApiConfig = false; editingRuleIndex = null; }}
+	/>
+{/if}
+
+{#if showSubmissionSettings}
+	<SubmissionSettings
+		bind:config={submissionConfig}
+		onclose={() => (showSubmissionSettings = false)}
+	/>
+{/if}

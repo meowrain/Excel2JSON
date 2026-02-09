@@ -33,3 +33,45 @@ export type MappingTemplate = Pick<
 	MappingConfig,
 	'source' | 'target' | 'type' | 'format' | 'excludeIfEmpty' | 'defaultValue'
 >[];
+
+/** Static mapping rule in Job Bundle output */
+export interface StaticRule {
+	type: 'static';
+	source: string;
+	target: string;
+	dataType: DataType;
+	format?: string;
+}
+
+/** Dynamic API enrichment rule */
+export interface ApiEnrichmentRule {
+	type: 'api_fetch';
+	target_key: string;
+	url_template: string;
+	method: 'GET' | 'POST';
+	headers?: Record<string, string>;
+	body_template?: string;
+	response_path: string;
+	fallback_value?: unknown;
+}
+
+/** Submission configuration for final data push */
+export interface SubmissionConfig {
+	target_url: string;
+	method: 'POST' | 'PUT';
+	batch_size: number;
+}
+
+/** Final exported Job Bundle structure */
+export interface JobBundle {
+	meta: {
+		version: string;
+		generated_at: string;
+	};
+	config: {
+		static_rules: StaticRule[];
+		enrichment_rules: ApiEnrichmentRule[];
+		submission: SubmissionConfig;
+	};
+	source_data: Record<string, unknown>[];
+}

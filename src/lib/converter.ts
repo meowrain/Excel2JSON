@@ -1,5 +1,14 @@
 import dayjs from 'dayjs';
-import type { MappingConfig, RowData, DataType, MappingTemplate } from './types.js';
+import type {
+	MappingConfig,
+	RowData,
+	DataType,
+	MappingTemplate,
+	ApiEnrichmentRule,
+	SubmissionConfig,
+	StaticRule,
+	JobBundle
+} from './types.js';
 
 /**
  * Check if a value is considered empty.
@@ -194,4 +203,48 @@ export function exportTemplate(mappings: MappingConfig[]): MappingTemplate {
 		if (defaultValue) entry.defaultValue = defaultValue;
 		return entry;
 	});
+}
+
+/**
+ * Convert enabled MappingConfigs to StaticRule format for Job Bundle.
+ */
+function toStaticRules(mappings: MappingConfig[]): StaticRule[] {
+	return mappings
+		.filter((m) => m.enabled)
+		.map((m) => {
+			const rule: StaticRule = {
+				type: 'static',
+				source: m.source,
+				target: m.target,
+				dataType: m.type
+			};
+			if (m.type === 'date' && m.format) rule.format = m.format;
+			return rule;
+		});
+}
+
+/**
+ * Generate a complete Job Bundle for export.
+ */
+export function generateJobBundle(
+	rows: RowData[],
+	mappings: MappingConfig[],
+	enrichmentRules: ApiEnrichmentRule[],
+	submissionConfig: SubmissionConfig
+): JobBundle {
+	const sourceData = convertData(rows, mappings);
+	const staticRules = toStaticRules(mappings);
+
+	return {
+		meta: {
+			version: '1.0.0',
+			generated_at: new Date().toISOString()
+		},
+		config: {
+			static_rules: staticRules,
+			enrichment_rules: enrichmentRules,
+			submission: submissionConfig
+		},
+		source_data: sourceData
+	};
 }

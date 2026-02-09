@@ -1,15 +1,23 @@
 <script lang="ts">
-	import type { MappingConfig, RowData } from '$lib/types.js';
+	import type { MappingConfig, RowData, ApiEnrichmentRule } from '$lib/types.js';
 	import ColumnConfig from './ColumnConfig.svelte';
 
 	let {
 		headers,
 		rows,
-		mappings = $bindable()
+		mappings = $bindable(),
+		enrichmentRules = [],
+		onaddapi,
+		oneditapi,
+		ondeleteapi
 	}: {
 		headers: string[];
 		rows: RowData[];
 		mappings: MappingConfig[];
+		enrichmentRules?: ApiEnrichmentRule[];
+		onaddapi?: () => void;
+		oneditapi?: (index: number) => void;
+		ondeleteapi?: (index: number) => void;
 	} = $props();
 
 	let activeConfigIndex = $state<number | null>(null);
@@ -37,16 +45,67 @@
 
 <div class="flex h-full flex-col overflow-hidden">
 	<div class="flex-shrink-0 border-b border-gray-200 bg-gray-50 px-4 py-2">
-		<h3 class="text-sm font-semibold text-gray-700">
-			Excel 数据
-			<span class="ml-2 text-xs font-normal text-gray-400">
-				{rows.length} 行 × {headers.length} 列
-				{#if rows.length > maxPreviewRows}
-					（显示前 {maxPreviewRows} 行）
-				{/if}
-			</span>
-		</h3>
+		<div class="flex items-center justify-between">
+			<h3 class="text-sm font-semibold text-gray-700">
+				Excel 数据
+				<span class="ml-2 text-xs font-normal text-gray-400">
+					{rows.length} 行 × {headers.length} 列
+					{#if enrichmentRules.length > 0}
+						+ {enrichmentRules.length} API 字段
+					{/if}
+					{#if rows.length > maxPreviewRows}
+						（显示前 {maxPreviewRows} 行）
+					{/if}
+				</span>
+			</h3>
+			{#if onaddapi}
+				<button
+					onclick={onaddapi}
+					class="inline-flex cursor-pointer items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100"
+				>
+					<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+					</svg>
+					添加 API 字段
+				</button>
+			{/if}
+		</div>
 	</div>
+
+	<!-- Enrichment rules bar -->
+	{#if enrichmentRules.length > 0}
+		<div class="flex flex-shrink-0 flex-wrap items-center gap-2 border-b border-gray-200 bg-purple-50/50 px-4 py-2">
+			<span class="text-xs font-medium text-purple-600">API 字段:</span>
+			{#each enrichmentRules as rule, i (i)}
+				<span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+					{rule.target_key}
+					<span class="text-purple-400">({rule.method})</span>
+					{#if oneditapi}
+						<button
+							onclick={() => oneditapi?.(i)}
+							class="cursor-pointer text-purple-400 hover:text-purple-600"
+							title="编辑"
+						>
+							<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+							</svg>
+						</button>
+					{/if}
+					{#if ondeleteapi}
+						<button
+							onclick={() => ondeleteapi?.(i)}
+							class="cursor-pointer text-purple-400 hover:text-red-500"
+							title="删除"
+						>
+							<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+							</svg>
+						</button>
+					{/if}
+				</span>
+			{/each}
+		</div>
+	{/if}
 
 	<div class="flex-1 overflow-auto">
 		<table class="w-full text-sm">
@@ -76,6 +135,17 @@
 							{/if}
 						</th>
 					{/each}
+					<!-- API enrichment columns (virtual) -->
+					{#each enrichmentRules as rule (rule.target_key)}
+						<th class="border-b border-r border-purple-200 bg-purple-50 px-3 py-2 text-left font-medium text-purple-600">
+							<div class="flex items-center gap-1">
+								<svg class="h-3 w-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+								</svg>
+								<span class="truncate" title="{rule.target_key} (API)">{rule.target_key}</span>
+							</div>
+						</th>
+					{/each}
 				</tr>
 			</thead>
 			<tbody>
@@ -84,6 +154,12 @@
 						{#each headers as header (header)}
 							<td class="border-b border-r border-gray-100 px-3 py-1.5 text-gray-700" title={displayValue(row[header])}>
 								<span class="block max-w-[200px] truncate">{displayValue(row[header])}</span>
+							</td>
+						{/each}
+						<!-- API placeholder cells -->
+						{#each enrichmentRules as _ (_.target_key)}
+							<td class="border-b border-r border-purple-100 bg-purple-50/30 px-3 py-1.5 text-xs italic text-purple-400">
+								[Pending API Fetch]
 							</td>
 						{/each}
 					</tr>
