@@ -100,6 +100,27 @@ describe('convertData', () => {
 		const result = convertData(rows, mappings);
 		expect(result[0]).toEqual({ full_name: 'Alice' });
 	});
+
+	it('builds nested objects from dot-separated target keys', () => {
+		const mappings: MappingConfig[] = [
+			{ source: 'name', target: 'user.name', type: 'string', excludeIfEmpty: false, defaultValue: '', enabled: true },
+			{ source: 'age', target: 'user.age', type: 'number', excludeIfEmpty: false, defaultValue: '', enabled: true },
+			{ source: 'active', target: 'meta.active', type: 'boolean', excludeIfEmpty: false, defaultValue: '', enabled: true }
+		];
+		const result = convertData(rows, mappings);
+		expect(result[0]).toEqual({
+			user: { name: 'Alice', age: 30 },
+			meta: { active: true }
+		});
+	});
+
+	it('builds deeply nested objects', () => {
+		const mappings: MappingConfig[] = [
+			{ source: 'name', target: 'a.b.c.d', type: 'string', excludeIfEmpty: false, defaultValue: '', enabled: true }
+		];
+		const result = convertData(rows, mappings);
+		expect(result[0]).toEqual({ a: { b: { c: { d: 'Alice' } } } });
+	});
 });
 
 describe('date conversion', () => {

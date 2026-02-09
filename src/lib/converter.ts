@@ -64,6 +64,31 @@ function formatDate(value: unknown, format?: string): string | number {
 }
 
 /**
+ * Set a value at a dot-separated path, creating nested objects as needed.
+ * e.g. setNested(obj, "user.address.city", "Beijing")
+ *   => obj = { user: { address: { city: "Beijing" } } }
+ */
+function setNested(obj: Record<string, unknown>, path: string, value: unknown): void {
+	if (!path.includes('.')) {
+		obj[path] = value;
+		return;
+	}
+
+	const keys = path.split('.');
+	let current: Record<string, unknown> = obj;
+
+	for (let i = 0; i < keys.length - 1; i++) {
+		const key = keys[i];
+		if (current[key] === undefined || current[key] === null || typeof current[key] !== 'object') {
+			current[key] = {};
+		}
+		current = current[key] as Record<string, unknown>;
+	}
+
+	current[keys[keys.length - 1]] = value;
+}
+
+/**
  * Convert raw Excel rows to JSON objects based on mapping configs.
  */
 export function convertData(
@@ -83,13 +108,13 @@ export function convertData(
 				continue;
 			}
 
-			if (isEmptyVal) {
-				obj[mapping.target] = mapping.defaultValue !== undefined && mapping.defaultValue !== ''
+			const finalValue = isEmptyVal
+				? (mapping.defaultValue !== undefined && mapping.defaultValue !== ''
 					? convertValue(mapping.defaultValue, mapping.type, mapping.format)
-					: null;
-			} else {
-				obj[mapping.target] = convertValue(rawValue, mapping.type, mapping.format);
-			}
+					: null)
+				: convertValue(rawValue, mapping.type, mapping.format);
+
+			setNested(obj, mapping.target, finalValue);
 		}
 
 		return obj;
