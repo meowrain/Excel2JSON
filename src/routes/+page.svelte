@@ -14,6 +14,34 @@
 	let isDragOver = $state(false);
 	let copySuccess = $state(false);
 
+	// Split panel
+	let splitPercent = $state(50);
+	let jsonCollapsed = $state(false);
+	let isDraggingSplit = $state(false);
+	let containerEl = $state<HTMLDivElement>();
+
+	function onSplitPointerDown(e: PointerEvent) {
+		e.preventDefault();
+		isDraggingSplit = true;
+		(e.target as HTMLElement).setPointerCapture(e.pointerId);
+	}
+
+	function onSplitPointerMove(e: PointerEvent) {
+		if (!isDraggingSplit || !containerEl) return;
+		const rect = containerEl.getBoundingClientRect();
+		const pct = ((e.clientX - rect.left) / rect.width) * 100;
+		splitPercent = Math.max(20, Math.min(80, pct));
+	}
+
+	function onSplitPointerUp() {
+		isDraggingSplit = false;
+	}
+
+	function toggleJsonPanel() {
+		jsonCollapsed = !jsonCollapsed;
+		if (!jsonCollapsed && splitPercent > 80) splitPercent = 50;
+	}
+
 	// Derived
 	const hasData = $derived(headers.length > 0 && rows.length > 0);
 
@@ -34,7 +62,20 @@
 		}, 150);
 	});
 
-	const jsonString = $derived(JSON.stringify(convertedJson, null, 2));
+	// Manual JSON editing — overrides converted output until next mapping/data change
+	let manualJson = $state<string | null>(null);
+
+	const jsonString = $derived(manualJson ?? JSON.stringify(convertedJson, null, 2));
+
+	function onJsonEdited(edited: string) {
+		manualJson = edited;
+	}
+
+	// Clear manual override when conversion changes
+	$effect(() => {
+		convertedJson;
+		manualJson = null;
+	});
 
 	// File handling
 	async function handleFile(file: File) {
@@ -239,15 +280,56 @@
 
 	<!-- Main content -->
 	{#if hasData}
-		<div class="flex flex-1 overflow-hidden">
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			bind:this={containerEl}
+			class="relative flex flex-1 overflow-hidden"
+			onpointermove={onSplitPointerMove}
+			onpointerup={onSplitPointerUp}
+		>
 			<!-- Left: Excel Table -->
-			<div class="w-1/2 overflow-hidden border-r border-gray-300">
+			<div class="overflow-hidden" style="width: {jsonCollapsed ? '100%' : `${splitPercent}%`}">
 				<ExcelTable {headers} {rows} bind:mappings />
 			</div>
-			<!-- Right: JSON Preview -->
-			<div class="w-1/2 overflow-hidden">
-				<JsonPreview json={convertedJson} />
-			</div>
+
+			{#if !jsonCollapsed}
+				<!-- Drag handle -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class="group flex w-2 flex-shrink-0 cursor-col-resize items-center justify-center bg-gray-200 hover:bg-blue-300 active:bg-blue-400 transition-colors"
+					onpointerdown={onSplitPointerDown}
+				>
+					<div class="h-8 w-0.5 rounded-full bg-gray-400 group-hover:bg-blue-500"></div>
+				</div>
+
+				<!-- Right: JSON Preview -->
+				<div class="relative flex-1 overflow-hidden">
+					<button
+						onclick={toggleJsonPanel}
+						aria-label="收起 JSON 面板"
+						class="absolute top-2 right-2 z-10 rounded bg-white/80 p-1 text-gray-400 shadow hover:bg-white hover:text-gray-600 cursor-pointer"
+					>
+						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+						</svg>
+					</button>
+					<JsonPreview json={convertedJson} onupdate={onJsonEdited} />
+				</div>
+			{:else}
+				<!-- Collapsed JSON mini-panel -->
+				<div class="flex w-10 flex-shrink-0 flex-col items-center border-l border-gray-200 bg-gray-50 py-3">
+					<button
+						onclick={toggleJsonPanel}
+						aria-label="展开 JSON 面板"
+						class="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 cursor-pointer"
+					>
+						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+						</svg>
+					</button>
+					<span class="mt-2 text-xs text-gray-400" style="writing-mode: vertical-rl">JSON</span>
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<!-- Empty state / drop zone -->

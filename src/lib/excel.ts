@@ -39,6 +39,18 @@ export function parseSheet(workbook: XLSX.WorkBook, sheetName: string): ParsedEx
 		throw new Error('工作表中没有数据');
 	}
 
-	const headers = Object.keys(jsonData[0]);
-	return { headers, rows: jsonData, sheetNames: workbook.SheetNames };
+	const allHeaders = Object.keys(jsonData[0]);
+	// Filter out SheetJS placeholder headers for empty columns (__EMPTY, __EMPTY_1, etc.)
+	const headers = allHeaders.filter((h) => !/^__EMPTY(_\d+)?$/.test(h));
+
+	// Strip empty-column keys from rows
+	const rows = headers.length < allHeaders.length
+		? jsonData.map((row) => {
+				const cleaned: Record<string, unknown> = {};
+				for (const h of headers) cleaned[h] = row[h];
+				return cleaned;
+			})
+		: jsonData;
+
+	return { headers, rows, sheetNames: workbook.SheetNames };
 }
