@@ -1,3 +1,73 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+/* Dark mode configuration using class strategy */
+@variant dark (&:where(.dark, .dark *));
+
+/* Custom scrollbar styles */
+@layer base {
+	/* Light mode scrollbar */
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+
+	::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	::-webkit-scrollbar-thumb {
+		background: theme('colors.slate.300');
+		border-radius: 9999px;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background: theme('colors.slate.400');
+	}
+
+	/* Dark mode scrollbar */
+	.dark ::-webkit-scrollbar-thumb {
+		background: theme('colors.slate.700');
+	}
+
+	.dark ::-webkit-scrollbar-thumb:hover {
+		background: theme('colors.slate.600');
+	}
+
+	/* Base transition for smooth theme switching */
+	* {
+		transition-property: color, background-color, border-color;
+		transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+		transition-duration: 200ms;
+	}
+
+	/* Prevent transition on page load */
+	.no-transition,
+	.no-transition * {
+		transition: none !important;
+	}
+}
+
+/* Syntax highlighting for JSON preview */
+@layer components {
+	.json-key {
+		@apply text-indigo-600 dark:text-indigo-400;
+	}
+
+	.json-string {
+		@apply text-emerald-600 dark:text-emerald-400;
+	}
+
+	.json-number {
+		@apply text-amber-600 dark:text-amber-400;
+	}
+
+	.json-boolean {
+		@apply text-violet-600 dark:text-violet-400;
+	}
+
+	.json-null {
+		@apply text-slate-500 dark:text-slate-500;
+	}
+}

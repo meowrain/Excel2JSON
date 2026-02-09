@@ -9,7 +9,13 @@
       "Bash(npm run build:*)",
       "Bash(npm run test:*)",
       "Bash(python -m py_compile:*)",
-      "Bash(node --check:*)"
+      "Bash(node --check:*)",
+      "Bash(ls:*)",
+      "Bash(findstr:*)",
+      "mcp__zai-mcp-server__analyze_image"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\meowr\\projects\\excel2json\\src\\lib"
     ]
   },
   "enableAllProjectMcpServers": true,

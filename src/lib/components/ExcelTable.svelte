@@ -44,11 +44,11 @@
 </script>
 
 <div class="flex h-full flex-col overflow-hidden">
-	<div class="flex-shrink-0 border-b border-gray-200 bg-gray-50 px-4 py-2">
+	<div class="flex-shrink-0 border-b border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-800 dark:bg-slate-900">
 		<div class="flex items-center justify-between">
-			<h3 class="text-sm font-semibold text-gray-700">
+			<h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">
 				Excel 数据
-				<span class="ml-2 text-xs font-normal text-gray-400">
+				<span class="ml-2 text-xs font-normal text-slate-400 dark:text-slate-500">
 					{rows.length} 行 × {headers.length} 列
 					{#if enrichmentRules.length > 0}
 						+ {enrichmentRules.length} API 字段
@@ -61,7 +61,7 @@
 			{#if onaddapi}
 				<button
 					onclick={onaddapi}
-					class="inline-flex cursor-pointer items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100"
+					class="inline-flex cursor-pointer items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50"
 				>
 					<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -74,10 +74,10 @@
 
 	<!-- Enrichment rules bar -->
 	{#if enrichmentRules.length > 0}
-		<div class="flex flex-shrink-0 flex-wrap items-center gap-2 border-b border-gray-200 bg-purple-50/50 px-4 py-2">
-			<span class="text-xs font-medium text-purple-600">API 字段:</span>
+		<div class="flex flex-shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-purple-50/50 px-4 py-2 dark:border-slate-800 dark:bg-purple-900/10">
+			<span class="text-xs font-medium text-purple-600 dark:text-purple-400">API 字段:</span>
 			{#each enrichmentRules as rule, i (i)}
-				<span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+				<span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
 					{rule.target_key}
 					<span class="text-purple-400">({rule.method})</span>
 					{#if oneditapi}
@@ -109,15 +109,15 @@
 
 	<div class="flex-1 overflow-auto">
 		<table class="w-full text-sm">
-			<thead class="sticky top-0 z-10 bg-gray-50">
+			<thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
 				<tr>
 					{#each headers as header, i (header)}
-						<th class="relative border-b border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
+						<th class="relative border-b border-r border-slate-200 px-3 py-2 text-left font-medium text-slate-600 dark:border-slate-800 dark:text-slate-400">
 							<div class="flex items-center gap-1">
 								<span class="truncate" title={header}>{header}</span>
 								<button
 									onclick={() => toggleConfig(i)}
-									class="ml-auto flex-shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600 cursor-pointer"
+									class="ml-auto flex-shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600 cursor-pointer dark:hover:bg-slate-700 dark:hover:text-slate-300"
 									title="配置此列"
 								>
 									<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +127,7 @@
 									</svg>
 								</button>
 								{#if mappings[i] && mappings[i].target !== mappings[i].source}
-									<span class="text-xs text-blue-500" title="映射为: {mappings[i].target}">→ {mappings[i].target}</span>
+									<span class="text-xs text-indigo-600 dark:text-indigo-400" title="映射为: {mappings[i].target}">→ {mappings[i].target}</span>
 								{/if}
 							</div>
 							{#if activeConfigIndex === i && mappings[i]}
@@ -137,7 +137,7 @@
 					{/each}
 					<!-- API enrichment columns (virtual) -->
 					{#each enrichmentRules as rule (rule.target_key)}
-						<th class="border-b border-r border-purple-200 bg-purple-50 px-3 py-2 text-left font-medium text-purple-600">
+						<th class="border-b border-r border-purple-200 bg-purple-50 px-3 py-2 text-left font-medium text-purple-600 dark:border-purple-800/50 dark:bg-purple-900/20 dark:text-purple-400">
 							<div class="flex items-center gap-1">
 								<svg class="h-3 w-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -150,15 +150,15 @@
 			</thead>
 			<tbody>
 				{#each rows.slice(0, maxPreviewRows) as row, rowIdx (rowIdx)}
-					<tr class={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+					<tr class="bg-white even:bg-slate-50/50 dark:bg-slate-950 dark:even:bg-slate-900/50">
 						{#each headers as header (header)}
-							<td class="border-b border-r border-gray-100 px-3 py-1.5 text-gray-700" title={displayValue(row[header])}>
+							<td class="border-b border-r border-slate-200 px-3 py-1.5 text-slate-700 dark:border-slate-800 dark:text-slate-300" title={displayValue(row[header])}>
 								<span class="block max-w-[200px] truncate">{displayValue(row[header])}</span>
 							</td>
 						{/each}
 						<!-- API placeholder cells -->
 						{#each enrichmentRules as _ (_.target_key)}
-							<td class="border-b border-r border-purple-100 bg-purple-50/30 px-3 py-1.5 text-xs italic text-purple-400">
+							<td class="border-b border-r border-purple-100 bg-purple-50/30 px-3 py-1.5 text-xs italic text-purple-400 dark:border-purple-900/30 dark:bg-purple-900/10 dark:text-purple-500">
 								[Pending API Fetch]
 							</td>
 						{/each}
